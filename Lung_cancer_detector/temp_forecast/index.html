@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Temperature Forecast</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:30px auto;padding:0 16px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:6px;border:1px solid #ddd;text-align:left}
+    input,button{padding:8px;font-size:14px}
+  </style>
+</head>
+<body>
+  <h2>تنبؤ درجات الحرارة لمدة 3 أيام بالساعة</h2>
+  <p>أدخل تاريخ بداية التنبؤ (مثال: <i>2026-01-05</i> أو ISO datetime)</p>
+  <div>
+    <input id="start" type="text" placeholder="YYYY-MM-DD or ISO" />
+    <button id="go">تنبؤ</button>
+  </div>
+  <div id="status"></div>
+  <table id="tbl" style="display:none">
+    <thead><tr><th>التاريخ والوقت</th><th>درجة الحرارة (°C)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    document.getElementById('go').onclick = async function(){
+      const d = document.getElementById('start').value.trim();
+      if(!d){alert('أدخل تاريخ');return}
+      document.getElementById('status').innerText = 'جاري التنبؤ...';
+      const res = await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_date:d})});
+      if(!res.ok){const err=await res.json(); document.getElementById('status').innerText = err.error||'خطأ'; return}
+      const data = await res.json();
+      const tbody = document.querySelector('#tbl tbody'); tbody.innerHTML='';
+      data.predictions.forEach(p=>{
+        const tr = document.createElement('tr');
+        const a = document.createElement('td'); a.innerText = p.dt;
+        const b = document.createElement('td'); b.innerText = p.temp;
+        tr.appendChild(a); tr.appendChild(b); tbody.appendChild(tr);
+      });
+      document.getElementById('tbl').style.display='table';
+      document.getElementById('status').innerText = 'تم التنبؤ (' + (data.method||'') + ')';
+    }
+  </script>
+</body>
+</html>
